@@ -1,0 +1,51 @@
+// Функция вытягивает из ссылки id файла
+function getIdFromUrl(URL) { 
+  return URL.match(/[-\w]{25,}/);
+}
+
+function copyTable(){
+  var doc = DocumentApp.openById("1xVngGORvLQX5zGol9WswRYbGhe1jLsgE5Mt_oLKVi_A");
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("Копия таблицы");
+  var table = doc.getBody().getTables()[0];
+  var countRow = table.getNumRows();
+  var countCell = table.getRow(0).getNumCells();
+  if(sheet == null){
+    sheet = ss.insertSheet();
+    sheet.setName("Копия таблицы");
+  } else {
+    sheet.clear()
+  }
+  for(let i = 0; i < countRow; i++){
+    for(let j = 0; j < countCell; j++){
+      sheet.getRange(i+1, j+1).setValue(table.getCell(i, j).getText());
+    }
+  }
+}
+
+// Функция записывает дату последнего изменения файла
+function lastUpdateFile(){
+  var doc = DocumentApp.openById("1xVngGORvLQX5zGol9WswRYbGhe1jLsgE5Mt_oLKVi_A");
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var table = doc.getBody().getTables()[0]
+  var countRow = table.getNumRows();
+  for(let i = 0; i < countRow; i++){
+    var url = table.getRow(i).getCell(3).getText();
+    ss.getRange("A" + (i+1)).setValue(url);
+    try {
+    var id = getIdFromUrl(url);
+    ss.getRange("B" + (i+1)).setValue(id);
+    if(id != null){
+      var driveFile = DriveApp.getFileById(id);
+      var lastUp = driveFile.getLastUpdated();
+      var formatDate = Utilities.formatDate(lastUp, "GMT+3" ,"dd.MM.yyyy")
+      ss.getRange("C" + (i+1)).setValue(formatDate);
+      //table.getRow(i).getCell(4).setText(formatDate);
+    }
+      else{
+        //table.getRow(i).getCell(4).setText("");
+        ss.getRange("C"+(i+1)).setValue("");
+      }
+    }catch(err){}
+  }
+}
